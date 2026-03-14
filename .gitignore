@@ -1,0 +1,17 @@
+venv/
+.env
+*.pyc
+__pycache__/
+session_state.json
+browser_profile/
+exploration/
+*.png
+*.html
+*.txt
+!requirements.txt
+tiktok_daily_report.json
+detailed_report.json
+detailed_gmv_breakdown.json
+daily_report.json
+*.skill
+.DS_Store
