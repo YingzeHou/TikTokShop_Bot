@@ -4,9 +4,13 @@ import json
 import re
 from tiktok_client import TikTokSellerClient, clean_val
 
-async def scrape_compass_overview(client: TikTokSellerClient):
-    print("\n[Compass Overview] Navigating...")
-    await client.navigate("https://seller-us.tiktok.com/compass/data-overview?shop_region=US")
+async def scrape_compass_overview(client: TikTokSellerClient, for_today=False):
+    url = "https://seller-us.tiktok.com/compass/data-overview?shop_region=US"
+    if for_today:
+        url += "&date_type=1"
+        
+    print(f"\n[Compass Overview] Navigating to {'Today' if for_today else 'Default'}...")
+    await client.navigate(url)
     await asyncio.sleep(5)
     
     # 1. Expand breakdowns (Affiliate/Linked)
@@ -111,16 +115,19 @@ async def main():
         browser_profile=os.path.join(os.getcwd(), "browser_profile")
     )
     
+    # Check if we want today's data
+    for_today = os.getenv("TIKTOK_REPORT_TODAY", "false").lower() == "true"
+    
     try:
         await client.start(headless=True)
         
-        overview = await scrape_compass_overview(client)
+        overview = await scrape_compass_overview(client, for_today=for_today)
         products = await scrape_product_analytics(client)
         
         final_report = {
             "overview": overview,
             "product_ranking": products,
-            "timestamp": "2026-03-13" # Should be dynamic in production
+            "timestamp": "2026-03-13" 
         }
         
         report_path = "tiktok_daily_report.json"
