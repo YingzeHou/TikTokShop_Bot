@@ -6,37 +6,35 @@ sys.path.append(os.getcwd())
 
 from skills.tiktok_seller_automation.scripts.tiktok_api_client import TikTokApiClient
 from skills.tiktok_seller_automation.scripts.endpoint_builder import EndpointBuilder
+from skills.tiktok_seller_automation.scripts.data_fetcher import DataFetcher
 
 def run_report():
-    # Initialize client
+    # Initialize components
     client = TikTokApiClient()
     builder = EndpointBuilder()
+    fetcher = DataFetcher(client)
     
-    # Get dates
+    # Define report parameters
     start, end = builder.get_default_dates()
     print(f"Running report for {start} to {end}...")
     
-    # Build payload for Page 0
-    payload = builder.build_product_subscription_payload(start, end, page=0)
+    # 1. Fetch data using the generic fetcher
+    all_data = fetcher.fetch_all_pages(
+        endpoint_key='product_subscriptions', 
+        payload_builder_func=builder.build_product_subscription_payload,
+        start_date=start, 
+        end_date=end
+    )
     
-    # Call API
-    response = client.call_api('product_subscriptions', payload=payload)
+    # 2. Save report using the generic saver
+    report_file = fetcher.save_report(
+        data=all_data, 
+        report_name="subscriptions", 
+        metadata={"start_date": start, "end_date": end}
+    )
     
-    if response.get("code") == 0:
-        data = response.get("data", {})
-        stats = data.get("stats", [])
-        print(f"\nSuccess! Found {len(stats)} products on page 0.")
-        
-        for p in stats:
-            name = p.get('product_name', 'N/A')
-            subs = p.get('active_subscriptions', 0)
-            gmv = p.get('subscription_gmv', {}).get('amount_formatted', '$0.00')
-            print(f"- {name[:60]}... | Subs: {subs} | GMV: {gmv}")
-            
-        pagination = data.get("list_control", {}).get("next_pagination", {})
-        print(f"\nPagination: {pagination}")
-    else:
-        print(f"Error in API call: {response.get('message')}")
+    print(f"\nFinal report: {report_file}")
+    print(f"Total items fetched: {len(all_data)}")
 
 if __name__ == "__main__":
     run_report()
