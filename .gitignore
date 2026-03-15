@@ -16,3 +16,4 @@ daily_report.json
 *.skill
 .DS_Store
 *.xlsx
+*.json

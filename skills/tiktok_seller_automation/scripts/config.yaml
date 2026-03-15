@@ -2,7 +2,10 @@
 
 # Base settings
 base_url: "https://seller-us.tiktok.com"
+ads_base_url: "https://ads.tiktok.com"
 oec_seller_id: "7495613311299782811"
+aadvid: "7383481422339735568"
+bc_id: "7312519670601400321"
 session_file: "session_state.json"
 
 # Common Headers
@@ -31,3 +34,23 @@ endpoints:
   product_subscriptions:
     path: "/api/v2/insights/seller/ttp/product/product_subscription/products/list"
     method: "POST"
+    data_key: "stats"
+    pagination_type: "list_control"
+  
+  campaign_list:
+    url: "https://ads.tiktok.com/api/oec_shopping/v1/oec/stat/post_campaign_list"
+    method: "POST"
+    data_key: "table"
+    pagination_type: "page_count"
+  
+  campaign_detail:
+    url: "https://ads.tiktok.com/api/oec_shopping/v1/oec/stat/post_overview_stat"
+    method: "POST"
+    data_key: "statistics"
+    pagination_type: "none"
+  
+  product_list:
+    url: "https://ads.tiktok.com/api/oec_shopping/v1/oec/stat/post_product_list"
+    method: "POST"
+    data_key: "table"
+    pagination_type: "page_count"

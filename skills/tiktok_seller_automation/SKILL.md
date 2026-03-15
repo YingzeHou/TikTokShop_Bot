@@ -1,40 +1,44 @@
 ---
 name: tiktok_seller_automation
-description: Modular and robust automation for TikTok Shop Seller Center.
+description: Modular and robust automation for TikTok Shop Seller Center and Ads APIs.
 ---
 
-# TikTok Shop Seller Automation Skill (Modular)
+# TikTok Shop Seller Automation Skill (Unified MVP)
 
-This skill provides a modular and robust architecture for automating data retrieval from the TikTok Shop Seller Center. It replaces the old, monolithic approach with a clean Separation of Concerns (SoC) using:
-- **Playwright** for interactive and automated session management.
-- **TikTokApiClient** for session-persistent API communication.
-- **EndpointBuilder** for structured JSON request payloads.
-- **Centralized YAML** for configuration and maintenance.
+This skill provides a modular and robust architecture for automating data retrieval from the TikTok Shop Seller Center and TikTok Ads APIs. It features:
+- **Multi-Domain Session Management**: Captures and maps session states for both `seller-us.tiktok.com` and `ads.tiktok.com`.
+- **Unified Reporting**: Consolidates product subscriptions, campaign statistics, and product performance into a single JSON report.
+- **Separation of Concerns**: Clean architecture with dedicated classes for API communication, request building, and data fetching.
 
 ## Folder Structure
-- `scripts/session_manager.py`: Handles interactive login and saves `session_state.json`.
-- `scripts/tiktok_api_client.py`: Core client for making authenticated API requests.
-- `scripts/endpoint_builder.py`: Constructs JSON payloads for various endpoints.
+- `scripts/session_manager.py`: Interactive login tool to capture mapped `session_state.json`.
+- `scripts/tiktok_api_client.py`: Core client that handles domain-specific sessions and headers.
+- `scripts/endpoint_builder.py`: Constructs JSON payloads for all supported endpoints.
+- `scripts/data_fetcher.py`: Generic multi-page fetcher supporting various pagination styles.
+- `scripts/run_unified_report.py`: Orchestrator for the unified data extraction workflow.
 - `scripts/config.yaml`: Centralized configuration for URLs, headers, and endpoints.
-- `scripts/run_report.py`: High-level script to fetch and display subscription reports.
+- `scripts/utils.py`: Shared utilities for config and session state handling.
 
 ## Workflows
 
-### 1. Initialize/Refresh Session
-If the session is expired or missing, run this to log in interactively.
+### 1. Initialize/Refresh Sessions
+Run this to capture separate sessions for Seller Center and Ads Center.
 - **Command**: `venv/bin/python3 skills/tiktok_seller_automation/scripts/session_manager.py`
+- **Action**: Follow the prompts to log in via the browser and press Enter in the terminal to capture each state.
 
-### 2. Run Subscription Report
-Fetches the latest product subscription data and GMV.
-- **Command**: `venv/bin/python3 skills/tiktok_seller_automation/scripts/run_report.py`
+### 2. Generate Unified Report
+Fetches all data and generates a consolidated JSON report.
+- **Command**: `venv/bin/python3 skills/tiktok_seller_automation/scripts/run_unified_report.py`
+- **Output**: `unified_report_YYYY-MM-DD.json` containing `subscription_data`, `campaign_data`, and `product_performance_data`.
 
 ## Configuration
 Update `skills/tiktok_seller_automation/scripts/config.yaml` to change:
 - `oec_seller_id`: Your TikTok Shop Seller ID.
-- `base_url`: The Seller Center base URL.
-- Endpoints and default parameters.
+- `aadvid`: Your TikTok Ads Advertiser ID.
+- `bc_id`: Your Business Center ID.
+- Endpoints and pagination settings.
 
 ## Implementation Details
-- **Authentication**: Uses Playwright's `storage_state` (cookies + local storage) saved in `session_state.json`.
-- **API Communication**: Uses the `requests` library with session persistence.
-- **Modularity**: Clean separation between API logic (`tiktok_api_client.py`) and request building (`endpoint_builder.py`).
+- **Authentication**: Mapped JSON in `session_state.json` stores `{ "seller_center": {...}, "ads_center": {...} }`.
+- **Dynamic Headers**: The client automatically updates `Origin` and `Referer` headers based on the target domain.
+- **Pagination Support**: Handles `list_control`, `page_count`, and `page_number` styles.

@@ -8,37 +8,53 @@ class DataFetcher:
     def fetch_all_pages(self, endpoint_key, payload_builder_func, **builder_kwargs):
         """
         Generic multi-page fetcher.
-        :param endpoint_key: Key in config.yaml endpoints.
-        :param payload_builder_func: Function that takes page, size, etc. and returns a payload.
-        :param builder_kwargs: Arguments for the payload builder (e.g. start_date, end_date).
         """
+        endpoint_info = self.client.config['endpoints'].get(endpoint_key)
+        data_key = endpoint_info.get('data_key', 'stats')
+        pagination_type = endpoint_info.get('pagination_type', 'list_control')
+        
         all_data = []
-        page = 0
+        # Page starts at 0 for list_control, 1 for page_count/page_number
+        page = 1 if pagination_type in ["page_number", "page_count"] else 0
         has_more = True
         
         while has_more:
             print(f"Fetching {endpoint_key} page {page}...")
-            # Build payload with current pagination
             payload = payload_builder_func(page=page, **builder_kwargs)
             
             try:
                 response = self.client.call_api(endpoint_key, payload=payload)
-                
                 if response.get("code") == 0:
                     data = response.get("data", {})
-                    # Note: stats is specific to the current endpoint; 
-                    # for future APIs, we might need to make this key configurable.
-                    items = data.get("stats", []) 
-                    all_data.extend(items)
-                    
-                    pagination = data.get("list_control", {}).get("next_pagination", {})
-                    has_more = pagination.get("has_more", False)
-                    page = pagination.get("next_page", page + 1)
-                    
-                    print(f"  Retrieved {len(items)} items. Total: {len(all_data)}")
+                    items = data.get(data_key, [])
+                    if isinstance(items, list):
+                        all_data.extend(items)
+                    elif isinstance(items, dict):
+                        all_data.append(items) # For single objects
+
+                    # Handle pagination detection
+                    if pagination_type == "list_control":
+                        pagination = data.get("list_control", {}).get("next_pagination", {})
+                        has_more = pagination.get("has_more", False)
+                        page = pagination.get("next_page", page + 1)
+                    elif pagination_type == "page_count":
+                        pagination = data.get("pagination", {})
+                        total_page = pagination.get("page_count", 1)
+                        has_more = page < total_page
+                        page += 1
+                    elif pagination_type == "page_number":
+                        page_size = payload.get("page_size", 10)
+                        has_more = len(items) == page_size
+                        page += 1
+                    else:
+                        has_more = False # No pagination
+
+                    print(f"  Retrieved {len(items) if isinstance(items, list) else 1} items. Total: {len(all_data)}")
                 else:
-                    print(f"  API Error: {response.get('message')}")
+                    msg = response.get('msg') or response.get('message') or "Unknown Error"
+                    print(f"  API Error: {msg}")
                     break
+
             except Exception as e:
                 print(f"  Request failed: {e}")
                 break
