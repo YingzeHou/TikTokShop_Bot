@@ -1,0 +1,33 @@
+# TikTok Shop Seller Center Configuration
+
+# Base settings
+base_url: "https://seller-us.tiktok.com"
+oec_seller_id: "7495613311299782811"
+session_file: "session_state.json"
+
+# Common Headers
+default_headers:
+  "Content-Type": "application/json"
+  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+  "Referer": "https://seller-us.tiktok.com/homepage"
+  "Origin": "https://seller-us.tiktok.com"
+
+# Common Query Parameters
+default_params:
+  locale: "en"
+  language: "en"
+  aid: "4068"
+  app_name: "i18n_ecom_shop"
+  device_platform: "web"
+  cookie_enabled: "true"
+  browser_language: "en-US"
+  browser_platform: "MacIntel"
+  browser_name: "Mozilla"
+  timezone_name: "America/Los_Angeles"
+  use_content_type_definition: "1"
+
+# Endpoint Definitions
+endpoints:
+  product_subscriptions:
+    path: "/api/v2/insights/seller/ttp/product/product_subscription/products/list"
+    method: "POST"

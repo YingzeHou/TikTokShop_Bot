@@ -15,3 +15,4 @@ detailed_gmv_breakdown.json
 daily_report.json
 *.skill
 .DS_Store
+*.xlsx
