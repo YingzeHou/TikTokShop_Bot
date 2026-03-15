@@ -37,6 +37,12 @@ endpoints:
     data_key: "stats"
     pagination_type: "list_control"
   
+  product_performance_general:
+    path: "/api/v2/insights/seller/ttp/product/list/v2"
+    method: "POST"
+    data_key: "items"
+    pagination_type: "list_control"
+  
   campaign_list:
     url: "https://ads.tiktok.com/api/oec_shopping/v1/oec/stat/post_campaign_list"
     method: "POST"

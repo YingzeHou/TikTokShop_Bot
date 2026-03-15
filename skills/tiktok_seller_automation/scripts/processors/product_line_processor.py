@@ -50,7 +50,8 @@ class ProductLineProcessor(BaseProcessor):
                     else:
                         p_id = str(raw_id).strip()
                     
-                    gmv = prev_sheet.cell(row=row, column=3).value
+                    # WoW baseline should be Total GMV (Column 5)
+                    gmv = prev_sheet.cell(row=row, column=5).value
                     if gmv is not None and not isinstance(gmv, str): # Skip formulas/strings
                         data[p_id] = float(gmv)
                 except:
@@ -92,24 +93,30 @@ class ProductLineProcessor(BaseProcessor):
         for col_letter, col_dim in temp_sheet.column_dimensions.items():
             new_sheet.column_dimensions[col_letter].width = col_dim.width
 
-        # 5. Prepare Raw Data Lookup
+        # 5. Prepare Raw Data Lookups
+        # Lookup 1: Subscription GMV
         sub_data = self.raw_data.get('sections', {}).get('subscription_data', [])
-        current_gmv_lookup = {}
+        sub_gmv_lookup = {}
         for item in sub_data:
             p_id = str(item.get('product_id')).strip()
             gmv_val = item.get('subscription_gmv', {}).get('amount')
             if p_id and gmv_val is not None:
-                current_gmv_lookup[p_id] = float(gmv_val)
+                sub_gmv_lookup[p_id] = float(gmv_val)
+        
+        # Lookup 2: Total GMV (from General Performance)
+        gen_data = self.raw_data.get('sections', {}).get('product_performance_general', [])
+        total_gmv_lookup = {}
+        for item in gen_data:
+            p_id = str(item.get('meta', {}).get('product_id')).strip()
+            gmv_val = item.get('stats', {}).get('gmv', {}).get('amount')
+            if p_id and gmv_val is not None:
+                total_gmv_lookup[p_id] = float(gmv_val)
         
         prev_gmv_lookup = self._get_previous_sheet_data(wb_report, report_date)
 
         # 6. Fill Data and Formulas
         print(f"Filling data for sheet: {report_date}...")
         match_count = 0
-        current_group_start = 2
-        
-        # We process in two passes: first products, then totals
-        # This is because Percentage needs the Total row address
         
         # Pass 1: Products
         total_rows = []
@@ -128,30 +135,57 @@ class ProductLineProcessor(BaseProcessor):
                     else:
                         p_id = str(id_val).strip()
                     
-                    if p_id in current_gmv_lookup:
-                        curr_gmv = current_gmv_lookup[p_id]
-                        new_sheet.cell(row=row, column=3).value = curr_gmv
+                    # Fill Subscription GMV (Column 3)
+                    if p_id in sub_gmv_lookup:
+                        new_sheet.cell(row=row, column=3).value = sub_gmv_lookup[p_id]
+                    
+                    # Fill Total GMV (Column 5)
+                    if p_id in total_gmv_lookup:
+                        curr_total_gmv = total_gmv_lookup[p_id]
+                        new_sheet.cell(row=row, column=5).value = curr_total_gmv
                         match_count += 1
                         
+                        # WoW calculation based on Total GMV (now Column 7 after shift)
                         if p_id in prev_gmv_lookup:
                             prev_gmv = prev_gmv_lookup[p_id]
                             if prev_gmv > 0:
-                                wow = (curr_gmv - prev_gmv) / prev_gmv
-                                new_sheet.cell(row=row, column=5).value = wow
+                                wow = (curr_total_gmv - prev_gmv) / prev_gmv
+                                new_sheet.cell(row=row, column=7).value = wow
                 except:
                     pass
 
         # Pass 2: Totals and Percentages
+        # First, find all rows that contain individual products (have an ID)
+        product_rows = []
+        for row in range(2, new_sheet.max_row + 1):
+            if new_sheet.cell(row=row, column=2).value:
+                product_rows.append(row)
+        
+        # We'll use an Excel formula to sum all these specific rows for the Grand Total
+        # format: SUM(E[r1], E[r2], ...)
+        grand_total_formula = "=SUM(" + ",".join([f"E{r}" for r in product_rows]) + ")"
+        
+        # We can place this formula in a temporary cell or just use it in the percentage formula
+        # To keep it clean, let's just use the logic in each percentage cell
+        
         group_start = 2
         for total_row in total_rows:
-            # GMV Total Formula
-            sum_range = f"C{group_start}:C{total_row-1}"
-            new_sheet.cell(row=total_row, column=3).value = f"=SUM({sum_range})"
+            # Column 3: Subscription GMV Total
+            sub_sum_range = f"C{group_start}:C{total_row-1}"
+            new_sheet.cell(row=total_row, column=3).value = f"=SUM({sub_sum_range})"
+            
+            # Column 5: Total GMV Total
+            tot_sum_range = f"E{group_start}:E{total_row-1}"
+            new_sheet.cell(row=total_row, column=5).value = f"=SUM({tot_sum_range})"
             
             # Percentage Formulas for all products in this group
             for row in range(group_start, total_row):
-                # Column 4 = C[row] / C[total_row]
-                new_sheet.cell(row=row, column=4).value = f"=IF(C${total_row}>0, C{row}/C${total_row}, 0)"
+                # Column 4: % of Sub GMV = C[row] / E[row] (Sub GMV / Total GMV for this product)
+                new_sheet.cell(row=row, column=4).value = f"=IF(E{row}>0, C{row}/E{row}, 0)"
+                
+                # Column 6: % of Total GMV = E[row] / SUM(all product rows)
+                # Note: We use absolute references for the product rows in the SUM
+                new_sheet.cell(row=row, column=6).value = f"=IF({grand_total_formula.replace('=', '')}>0, E{row}/({grand_total_formula.replace('=', '')}), 0)"
             
             group_start = total_row + 1
 

@@ -57,6 +57,31 @@ class EndpointBuilder:
         }
 
     @staticmethod
+    def build_product_performance_general_payload(start_date, end_date, page=0, size=10):
+        """
+        Builds payload for the product_performance_general endpoint.
+        """
+        return {
+            "request": {
+                "time_descriptor": {
+                    "start": start_date,
+                    "end": end_date,
+                    "timezone_offset": -28800
+                },
+                "ccr_available_date": end_date, # Approximation
+                "search": {"voc_statuses": [], "gmv_ranges": []},
+                "filter": {},
+                "list_control": {
+                    "rules": [{"direction": 2, "field": "gmv"}],
+                    "pagination": {
+                        "size": size,
+                        "page": page
+                    }
+                }
+            }
+        }
+
+    @staticmethod
     def build_product_list_payload(start_date, end_date, campaign_id="", page=1, size=10):
         return {
             "query_list": [

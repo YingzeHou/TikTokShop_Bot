@@ -39,8 +39,17 @@ def run_unified_report():
         end_date=end
     )
     
-    # Section 3: Product Performance List (Iterate through campaigns)
-    print("\nSection 3: Fetching Product Performance per Campaign...")
+    # Section 3: General Product Performance
+    print("\nSection 3: Fetching General Product Performance...")
+    report_sections['product_performance_general'] = fetcher.fetch_all_pages(
+        endpoint_key='product_performance_general',
+        payload_builder_func=builder.build_product_performance_general_payload,
+        start_date=start,
+        end_date=end
+    )
+    
+    # Section 4: Product Performance List (Iterate through campaigns)
+    print("\nSection 4: Fetching Product Performance per Campaign...")
     all_product_performance = []
     for campaign in report_sections.get('campaign_data', []):
         camp_id = campaign.get('campaign_id')

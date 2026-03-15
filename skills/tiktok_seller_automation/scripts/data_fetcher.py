@@ -5,7 +5,7 @@ class DataFetcher:
     def __init__(self, api_client):
         self.client = api_client
 
-    def fetch_all_pages(self, endpoint_key, payload_builder_func, **builder_kwargs):
+    def fetch_all_pages(self, endpoint_key, payload_builder_func, start_page=None, **builder_kwargs):
         """
         Generic multi-page fetcher.
         """
@@ -14,8 +14,13 @@ class DataFetcher:
         pagination_type = endpoint_info.get('pagination_type', 'list_control')
         
         all_data = []
-        # Page starts at 0 for list_control, 1 for page_count/page_number
-        page = 1 if pagination_type in ["page_number", "page_count"] else 0
+        # Determine starting page
+        if start_page is not None:
+            page = start_page
+        else:
+            # Default logic: page_number/page_count (Ads) are 1-indexed, list_control (Seller) is 0-indexed
+            page = 1 if pagination_type in ["page_number", "page_count"] else 0
+        
         has_more = True
         
         while has_more:
