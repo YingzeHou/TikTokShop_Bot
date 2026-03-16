@@ -9,14 +9,18 @@ from skills.tiktok_seller_automation.scripts.tiktok_api_client import TikTokApiC
 from skills.tiktok_seller_automation.scripts.endpoint_builder import EndpointBuilder
 from skills.tiktok_seller_automation.scripts.data_fetcher import DataFetcher
 
-def run_unified_report():
+def run_unified_report(start_date=None, end_date=None):
     # Initialize components
     client = TikTokApiClient()
     builder = EndpointBuilder()
     fetcher = DataFetcher(client)
     
     # Define report parameters
-    start, end = builder.get_default_dates()
+    if start_date and end_date:
+        start, end = start_date, end_date
+    else:
+        start, end = builder.get_default_dates()
+    
     print(f"=== Unified Report for {start} to {end} ===\n")
     
     report_sections = {}
@@ -80,7 +84,7 @@ def run_unified_report():
     }
     
     # Save unified report
-    report_file = f"unified_report_{datetime.now().strftime('%Y-%m-%d')}.json"
+    report_file = f"unified_report_{start}.json"
     unified_report = {
         "metadata": metadata,
         "sections": report_sections
@@ -96,4 +100,6 @@ def run_unified_report():
     print(f"{'='*40}")
 
 if __name__ == "__main__":
-    run_unified_report()
+    s = sys.argv[1] if len(sys.argv) > 1 else None
+    e = sys.argv[2] if len(sys.argv) > 2 else None
+    run_unified_report(s, e)
