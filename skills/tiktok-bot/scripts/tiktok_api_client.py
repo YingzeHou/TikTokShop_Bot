@@ -1,9 +1,17 @@
 import requests
 import json
-from skills.tiktok_seller_automation.scripts.utils import load_config, get_cookies_from_state
+import os
+import sys
+
+# Add current directory to path for imports
+curr_dir = os.path.dirname(os.path.abspath(__file__))
+if curr_dir not in sys.path:
+    sys.path.append(curr_dir)
+
+from utils import load_config, get_cookies_from_state
 
 class TikTokApiClient:
-    def __init__(self, config_path="skills/tiktok_seller_automation/scripts/config.yaml"):
+    def __init__(self, config_path=None):
         self.config = load_config(config_path)
         self.base_url = self.config['base_url']
         self.session_file = self.config['session_file']

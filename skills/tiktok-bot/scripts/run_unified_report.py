@@ -2,12 +2,14 @@ import sys
 import os
 import json
 from datetime import datetime
-# Add project root to sys.path
-sys.path.append(os.getcwd())
+# Add scripts folder to sys.path to handle hyphenated parent directory
+scripts_dir = os.path.dirname(os.path.abspath(__file__))
+if scripts_dir not in sys.path:
+    sys.path.append(scripts_dir)
 
-from skills.tiktok_seller_automation.scripts.tiktok_api_client import TikTokApiClient
-from skills.tiktok_seller_automation.scripts.endpoint_builder import EndpointBuilder
-from skills.tiktok_seller_automation.scripts.data_fetcher import DataFetcher
+from tiktok_api_client import TikTokApiClient
+from endpoint_builder import EndpointBuilder
+from data_fetcher import DataFetcher
 
 def run_unified_report(start_date=None, end_date=None):
     # Initialize components

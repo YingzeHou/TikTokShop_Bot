@@ -2,7 +2,10 @@ import yaml
 import json
 import os
 
-def load_config(config_path="skills/tiktok_seller_automation/scripts/config.yaml"):
+def load_config(config_path=None):
+    if not config_path:
+        # Default to config.yaml in the same directory as the script
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml")
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 

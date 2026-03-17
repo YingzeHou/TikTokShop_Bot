@@ -1,5 +1,5 @@
 ---
-name: tiktok_seller_automation
+name: tiktok-bot
 description: Modular and robust automation for TikTok Shop Seller Center and Ads APIs.
 ---
 
@@ -27,21 +27,21 @@ This skill provides a modular and robust architecture for automating data retrie
 
 ### 1. Initialize/Refresh Sessions
 Run this to capture separate sessions for Seller Center and Ads Center.
-- **Command**: `venv/bin/python3 skills/tiktok_seller_automation/scripts/session_manager.py`
+- **Command**: `venv/bin/python3 skills/tiktok-bot/scripts/session_manager.py`
 - **Action**: Follow the prompts to log in via the browser and press Enter in the terminal to capture each state.
 
 ### 2. Generate Unified Report
 Fetches all data and generates a consolidated JSON report.
-- **Command**: `venv/bin/python3 skills/tiktok_seller_automation/scripts/run_unified_report.py`
+- **Command**: `venv/bin/python3 skills/tiktok-bot/scripts/run_unified_report.py`
 - **Output**: `unified_report_YYYY-MM-DD.json`.
 
 ### 3. Process Data into Excel
 Fills the latest unified report data into the formatted Excel master report.
-- **Command**: `venv/bin/python3 skills/tiktok_seller_automation/scripts/run_filling_agents.py`
+- **Command**: `venv/bin/python3 skills/tiktok-bot/scripts/run_filling_agents.py`
 - **Output**: Updates `Product_Line_Subscription_Report.xlsx` with new dated sheets and WoW metrics.
 
 ## Configuration
-Update `skills/tiktok_seller_automation/scripts/config.yaml` to change:
+Update `skills/tiktok-bot/scripts/config.yaml` to change:
 - `oec_seller_id`: Your TikTok Shop Seller ID.
 - `aadvid`: Your TikTok Ads Advertiser ID.
 - `bc_id`: Your Business Center ID.

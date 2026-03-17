@@ -3,7 +3,7 @@ import json
 import openpyxl
 from copy import copy
 from datetime import datetime
-from skills.tiktok_seller_automation.scripts.processors.base_processor import BaseProcessor
+from .base_processor import BaseProcessor
 
 class ProductLineProcessor(BaseProcessor):
     def __init__(self, template_path, report_path):
@@ -21,12 +21,26 @@ class ProductLineProcessor(BaseProcessor):
 
     def _get_previous_sheet_data(self, workbook, current_sheet_name):
         """Extracts metrics from the previous sheet, calculating values for formula cells."""
-        sorted_sheets = sorted([s for s in workbook.sheetnames if s != "template"])
+        # Filter for valid dated sheets (YYYY-MM-DD)
+        valid_sheets = []
+        for s in workbook.sheetnames:
+            if s == "template": continue
+            try:
+                datetime.strptime(s, "%Y-%m-%d")
+                valid_sheets.append(s)
+            except ValueError:
+                continue
+        
+        sorted_sheets = sorted(valid_sheets)
+        
         try:
-            current_idx = sorted_sheets.index(current_sheet_name)
-            if current_idx == 0: return {"products": {}, "aggregates": {}}
+            # Find the latest sheet that is strictly before the current_sheet_name
+            past_sheets = [s for s in sorted_sheets if s < current_sheet_name]
+            if not past_sheets:
+                print(f"No previous dated sheets found before {current_sheet_name}.")
+                return {"products": {}, "aggregates": {}}
             
-            prev_sheet_name = sorted_sheets[current_idx - 1]
+            prev_sheet_name = past_sheets[-1]
             prev_sheet = workbook[prev_sheet_name]
             print(f"Detected previous sheet for WoW: {prev_sheet_name}")
             
@@ -51,6 +65,10 @@ class ProductLineProcessor(BaseProcessor):
 
                 if raw_id:
                     p_id = format(raw_id, '.0f') if isinstance(raw_id, float) else str(raw_id).strip()
+                    # Re-calculate derived column 12 if it's 0/missing (likely due to it being a formula)
+                    if metrics.get(5, 0) > 0:
+                        metrics[12] = metrics.get(10, 0) / metrics[5]
+                    
                     product_data[p_id] = metrics
                     current_group_metrics.append(metrics)
                 elif "Total" in product_name:
@@ -157,10 +175,15 @@ class ProductLineProcessor(BaseProcessor):
                         new_sheet.cell(row=row, column=12).value = f"=IF(E{row}>0, J{row}/E{row}, 0)" 
                         
                         # Video % WoW (13)
-                        this_pct = cur[10] / cur[5] if cur[5] > 0 else 0
-                        if 12 in prev and prev[12] > 0:
-                            new_sheet.cell(row=row, column=13).value = (this_pct - prev[12]) / prev[12]
-                except: pass
+                        cur_gmv = cur.get(5, 0)
+                        cur_vid_gmv = cur.get(10, 0)
+                        this_pct = cur_vid_gmv / cur_gmv if cur_gmv > 0 else 0
+                        
+                        prev_vid_pct = prev.get(12)
+                        if prev_vid_pct is not None and prev_vid_pct > 0:
+                            new_sheet.cell(row=row, column=13).value = (this_pct - prev_vid_pct) / prev_vid_pct
+                except Exception as e:
+                    print(f"Error processing row {row}: {e}")
 
         # Totals and Percentages
         grand_total_formula = "SUM(" + ",".join([f"E{r}" for r in product_rows]) + ")"

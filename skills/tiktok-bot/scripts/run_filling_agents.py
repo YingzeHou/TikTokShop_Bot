@@ -1,10 +1,12 @@
 import sys
 import os
 import glob
-# Add project root to sys.path
-sys.path.append(os.getcwd())
+# Add scripts folder to sys.path to handle hyphenated parent directory
+scripts_dir = os.path.dirname(os.path.abspath(__file__))
+if scripts_dir not in sys.path:
+    sys.path.append(scripts_dir)
 
-from skills.tiktok_seller_automation.scripts.processors.product_line_processor import ProductLineProcessor
+from processors.product_line_processor import ProductLineProcessor
 
 def run_filling_agents(report_file=None):
     # 1. Find the report file
