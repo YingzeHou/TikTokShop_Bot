@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import argparse
 from datetime import datetime
 # Add scripts folder to sys.path to handle hyphenated parent directory
 scripts_dir = os.path.dirname(os.path.abspath(__file__))
@@ -18,10 +19,9 @@ def run_unified_report(start_date=None, end_date=None):
     fetcher = DataFetcher(client)
     
     # Define report parameters
-    if start_date and end_date:
-        start, end = start_date, end_date
-    else:
-        start, end = builder.get_default_dates()
+    default_start, default_end = builder.get_default_dates()
+    start = start_date if start_date else default_start
+    end = end_date if end_date else default_end
     
     print(f"=== Unified Report for {start} to {end} ===\n")
     
@@ -102,6 +102,10 @@ def run_unified_report(start_date=None, end_date=None):
     print(f"{'='*40}")
 
 if __name__ == "__main__":
-    s = sys.argv[1] if len(sys.argv) > 1 else None
-    e = sys.argv[2] if len(sys.argv) > 2 else None
-    run_unified_report(s, e)
+    parser = argparse.ArgumentParser(description="Generate a unified report for TikTok Shop.")
+    parser.add_argument("start_date", nargs="?", help="Start date in YYYY-MM-DD format")
+    parser.add_argument("end_date", nargs="?", help="End date in YYYY-MM-DD format")
+    args = parser.parse_args()
+    
+    run_unified_report(args.start_date, args.end_date)
+
